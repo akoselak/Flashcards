@@ -1,0 +1,78 @@
+**1. Know what you want before you prompt**
+
+Write two or three sentences on the behavior you want and how you'll know it works. 
+Most slow vibe coding comes from vague prompts that generate the wrong thing, which you then have to untangle. 
+In your flashcard app, "save my cards so they survive a refresh" is a good prompt because you can test it in 
+ten seconds.
+
+**2. Keep the loop small**
+
+Prompt, run, test, commit. One feature per cycle, and never stack a new prompt on top of code you haven't run. 
+Small steps make bugs easy to locate because you know the last change caused them. 
+They also keep each piece of new code small enough to actually understand.
+
+**3. Match your reading depth to the risk**
+
+You don't need to understand every line equally. A rough triage:
+- **Read closely:** anything touching data (saving, deleting, loading), anything with security implications, 
+and anything that surprised you.
+- **Skim for shape:** the overall structure. Which function does what, and where does data flow?
+- **Skip for now:** styling details, boilerplate, and syntax you'll absorb over time.
+
+**4. Make the AI teach as it builds**
+
+These prompts cost a few seconds and pay off hugely:
+- "Explain what changed and why, in plain language."
+- "Walk me through this function line by line."
+- "What's a simpler way to do this, and what are the tradeoffs?"
+- "What could break here?"
+
+A strong test is to explain a new piece of code back in your own words. If you can't, ask again until you can.
+
+**5. Predict before you run**
+
+Before testing a change, guess what will happen. 
+Be specific: "after I add a card and refresh, it should still be there." 
+When your prediction is wrong, that's exactly where your mental model has a gap, 
+and it's the fastest learning signal you'll get.
+
+**6. Change things by hand**
+
+Make tiny edits yourself, like a color, a label, or a number in the quiz logic, and see what breaks. 
+Hand edits build intuition that reading never does. 
+Once a month, try to write one small function from scratch before asking for help.
+
+**7. Debug with evidence**
+
+When something breaks, give the AI the exact error message, what you expected, and what happened. 
+Open your browser's developer console (F12) to find errors. 
+Learning to read an error message is probably the single most valuable skill here, 
+because it turns "it's broken" into a specific, fixable problem.
+
+**8. Use git as your safety net**
+
+Commit every time something works. Fearless experimentation is what makes fast iteration possible, 
+and `git diff` shows exactly what the AI changed, which is a great way to review code without reading 
+the whole file.
+
+**9. Stay in charge of the design**
+
+The AI is good at writing code and mediocre at deciding what the project should become. 
+You decide the features, the structure, and when something is good enough. 
+If you notice the AI piling on complexity (extra libraries, abstractions you didn't ask for), 
+push back: "Make this simpler" is a legitimate and often best prompt.
+
+**10. Keep a learning log**
+
+A plain notes file with three headings works well: *what I asked*, *what I learned*, *what confused me*. 
+Review the confusing items weekly and ask the AI to explain them. 
+After a few weeks you'll see your own patterns and start prompting better.
+
+**A quick weekly rhythm:**
+- Build a new feature using the loop above.
+- Pick one chunk of generated code and understand it fully, to the point where you could explain it to someone.
+- Make one hand edit.
+- Commit and log what you learned.
+
+You'll go slower than pure "accept everything" vibe coding at first, 
+but the understanding compounds quickly, and within a few weeks you'll be both faster and better at steering. 
