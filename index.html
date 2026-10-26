@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Flashcards</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Flashcards</h1>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-quiz" aria-selected="true">
+          Quiz
+        </button>
+        <button class="tab" role="tab" id="tab-cards" aria-selected="false">
+          Cards
+        </button>
+      </div>
+      <section id="quiz"></section>
+      <section id="cards" hidden></section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
