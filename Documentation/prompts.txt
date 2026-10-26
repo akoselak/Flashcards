@@ -1,1 +1,29 @@
 -- All prompts used for this project will be saved here, labeled "Prompt_n"
+
+Prompt_1: “When I add or delete a card, it’s saved. 
+When I reload the page, my cards are still there. 
+First-time visitors see the starter deck.
+I want this saved on localstorage”
+
+    What needs to change in app.js:
+    + the deck array is saved on app.js itself, it needs to be in a separate json file
+    + app.js may need to be reworked to treat deck as json
+
+    What should happen:
+    + when the page reloads, localstorage will still bring up the saved cards
+
+    Questions to ask:
+    1. what are the benefits to localstorage and disk?
+    2. is it a good idea to store it in both?
+
+
+    How each requirement is met:
+
+    1. Add or delete saves. saveDeck() runs right after deck.push(...) and right after the delete filter. 
+    Those are the only two places the deck changes, so those are the only two places that need it. 
+    It turns the array into text with JSON.stringify and stores it in localStorage.
+
+    2. Reload keeps your cards. loadDeck() runs once at startup and reads that text back with JSON.parse.
+
+    3. First-time visitors see the starter deck. localStorage.getItem returns null when nothing has ever 
+    been saved, and that’s the signal to return STARTER_DECK.

@@ -1,5 +1,7 @@
-// ---- Data: your deck lives in this array (resets on refresh in this version) ----
-let deck = [
+// ---- Storage: the only place that touches localStorage ----
+const STORAGE_KEY = "flashcards.deck";
+
+const STARTER_DECK = [
   {
     id: 1,
     q: "What does git commit do?",
@@ -21,7 +23,31 @@ let deck = [
     a: "A short description of what the app does and what “done” looks like.",
   },
 ];
-let nextId = 5;
+
+function loadDeck() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === null) return STARTER_DECK.slice(); // first visit: nothing saved yet
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) return parsed; // includes an empty [] deck
+  } catch (err) {
+    console.warn("Could not load saved deck:", err);
+  }
+  return STARTER_DECK.slice(); // fallback if data is corrupt
+}
+
+function saveDeck() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deck));
+  } catch (err) {
+    console.warn("Could not save deck:", err);
+  }
+}
+
+// ---- Data ----
+let deck = loadDeck();
+// Next id must be higher than any saved id, or new cards could collide with old ones
+let nextId = deck.reduce((max, c) => Math.max(max, c.id), 0) + 1;
 
 // ---- Quiz state ----
 let queue = [],
@@ -152,6 +178,7 @@ function renderCards() {
       return;
     }
     deck.push({ id: nextId++, q, a });
+    saveDeck(); // <-- save after adding
     queue = []; // rebuild the quiz next time it opens
     renderCards();
     $("msg").textContent = "Card added.";
@@ -160,6 +187,7 @@ function renderCards() {
     (b) =>
       (b.onclick = () => {
         deck = deck.filter((c) => c.id !== Number(b.dataset.id));
+        saveDeck(); // <-- save after deleting
         queue = [];
         renderCards();
       }),
