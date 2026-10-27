@@ -27,3 +27,28 @@ I want this saved on localstorage”
 
     3. First-time visitors see the starter deck. localStorage.getItem returns null when nothing has ever 
     been saved, and that’s the signal to return STARTER_DECK.
+
+
+Prompt_2: “In my flashcard app, each card is {id, q, a}. Add right and wrong counters to each card. 
+Update them in answer() and save with saveDeck(). Show the counts next to each card on the Cards tab. 
+Make sure cards already saved in localStorage without these fields still work. Explain the changes.”
+
+    What needs to change in app.js:
+    + the card will now look something like {id, q, a, r, w}
+
+    what should happen:
+    + right and wrong counters show up next to each card
+    + refreshing the page should keep track of the right and wrong count
+
+    What changed:
+
+    Starter cards now carry right and wrong fields, both starting at 0.
+    normalize(c) is a new helper that returns a copy of a card with its two counters forced to real numbers. 
+    Number(x) || 0 turns missing, null, or garbage values into 0. Cards saved before this feature get their counters 
+    filled in this way.
+    loadDeck() now runs every loaded card through normalize, on all three paths: first visit, saved data, 
+    and the corrupt-data fallback. 
+    The starter deck is copied with map, so the constant isn’t modified when you answer cards.
+    answer(ok) now grabs the current card, bumps either its right or wrong counter alongside the existing round 
+    arrays, and calls saveDeck() before moving on.
+    The Cards tab shows a line under each card with its right and missed counts.

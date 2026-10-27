@@ -1,1 +1,12 @@
 -- all issues discovered will be saved here, labeled: "Issue_n", "Resolution_n"
+
+Issue_1: Newly created cards do not update
+
+    What i found:
+        
+        3: {id: 5, q: "test", a: "test", wrong: null, right: null}
+
+    + the newly added card is setting right and wrong as null instead of 0
+
+Resolution_0: updated deck.push() when initializing a new card so that right and wrong = 0
+deck.push({ id: nextId++, q, a, right: 0, wrong: 0 });

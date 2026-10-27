@@ -6,34 +6,47 @@ const STARTER_DECK = [
     id: 1,
     q: "What does git commit do?",
     a: "Saves a snapshot of your staged changes to the project history.",
+    right: 0,
+    wrong: 0,
   },
   {
     id: 2,
     q: "What does a bug report need most?",
     a: "The exact error, what you did, what you expected, and what happened.",
+    right: 0,
+    wrong: 0,
   },
   {
     id: 3,
     q: "Why build one feature at a time?",
     a: "Small steps are easy to test, and easy to undo when something breaks.",
+    right: 0,
+    wrong: 0,
   },
   {
     id: 4,
     q: "What is a spec?",
     a: "A short description of what the app does and what “done” looks like.",
+    right: 0,
+    wrong: 0,
   },
 ];
+
+// Makes sure a card has numeric counters, even if it was saved before they existed
+function normalize(c) {
+  return { ...c, right: Number(c.right) || 0, wrong: Number(c.wrong) || 0 };
+}
 
 function loadDeck() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === null) return STARTER_DECK.slice(); // first visit: nothing saved yet
+    if (saved === null) return STARTER_DECK.map(normalize); // first visit: nothing saved yet
     const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed)) return parsed; // includes an empty [] deck
+    if (Array.isArray(parsed)) return parsed.map(normalize); // includes an empty [] deck
   } catch (err) {
     console.warn("Could not load saved deck:", err);
   }
-  return STARTER_DECK.slice(); // fallback if data is corrupt
+  return STARTER_DECK.map(normalize); // fallback if data is corrupt
 }
 
 function saveDeck() {
@@ -133,8 +146,17 @@ function flip() {
   flipped = !flipped;
   renderQuiz();
 }
+
 function answer(ok) {
-  (ok ? right : wrong).push(queue[pos]);
+  const card = queue[pos];
+  if (ok) {
+    right.push(card);
+    card.right++;
+  } else {
+    wrong.push(card);
+    card.wrong++;
+  }
+  saveDeck();
   pos++;
   flipped = false;
   renderQuiz();
@@ -163,7 +185,8 @@ function renderCards() {
           ? deck
               .map(
                 (c) => `
-        <li><div><b>${esc(c.q)}</b><span>${esc(c.a)}</span></div>
+        <li><div><b>${esc(c.q)}</b><span>${esc(c.a)}</span>
+        <span style="display:block;margin-top:4px">${c.right || 0} right · ${c.wrong || 0} missed</span></div>
         <button class="del" data-id="${c.id}" aria-label="Delete card">Delete</button></li>`,
               )
               .join("")
@@ -177,8 +200,8 @@ function renderCards() {
       $("msg").textContent = "Fill in both the question and the answer.";
       return;
     }
-    deck.push({ id: nextId++, q, a });
-    saveDeck(); // <-- save after adding
+    deck.push({ id: nextId++, q, a, right: 0, wrong: 0 });
+    saveDeck(); // save after adding
     queue = []; // rebuild the quiz next time it opens
     renderCards();
     $("msg").textContent = "Card added.";
@@ -187,7 +210,7 @@ function renderCards() {
     (b) =>
       (b.onclick = () => {
         deck = deck.filter((c) => c.id !== Number(b.dataset.id));
-        saveDeck(); // <-- save after deleting
+        saveDeck(); // save after deleting
         queue = [];
         renderCards();
       }),
