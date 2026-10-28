@@ -91,9 +91,35 @@ function shuffle(arr) {
   return a;
 }
 
+// ---- Weights: harder cards get a higher weight (1 to 5, unseen cards = 3) ----
+const WEIGHT_MIN = 1,
+  WEIGHT_MAX = 5;
+
+// Computed from the card's own counts only, so one card's weight never depends on another's
+function weightOf(c) {
+  const missRate = (c.wrong + 1) / (c.right + c.wrong + 2); // smoothed: unseen card = 0.5
+  return WEIGHT_MIN + (WEIGHT_MAX - WEIGHT_MIN) * missRate;
+}
+
+// One independent draw: chance of picking a card = its weight / total weight
+function drawWeighted(cards) {
+  const total = cards.reduce((sum, c) => sum + weightOf(c), 0);
+  let r = Math.random() * total;
+  for (const c of cards) {
+    r -= weightOf(c);
+    if (r < 0) return c;
+  }
+  return cards[cards.length - 1]; // guards against floating-point rounding
+}
+
+// Each draw is independent (with replacement), so a card can appear more than once or not at all
+function buildWeightedQueue(cards, n) {
+  return Array.from({ length: n }, () => drawWeighted(cards));
+}
+
 // ---- Quiz tab ----
-function startQuiz(cards) {
-  queue = shuffle(cards);
+function startQuiz(cards, weighted = false) {
+  queue = weighted ? buildWeightedQueue(cards, cards.length) : shuffle(cards);
   pos = 0;
   flipped = false;
   right = [];
@@ -109,7 +135,7 @@ function renderQuiz() {
     return;
   }
   if (queue.length === 0) {
-    startQuiz(deck);
+    startQuiz(deck, true);
     return;
   }
 
@@ -124,8 +150,9 @@ function renderQuiz() {
           <button class="btn" id="redo" ${wrong.length ? "" : "disabled"}>Review ${wrong.length} missed</button>
         </div>
       </div>`;
-    $("again").onclick = () => startQuiz(deck);
-    $("redo").onclick = () => startQuiz(wrong.slice());
+    $("again").onclick = () => startQuiz(deck, true);
+    // A card can be drawn and missed twice in one round, so review each missed card once
+    $("redo").onclick = () => startQuiz([...new Set(wrong)]);
     return;
   }
 
@@ -172,14 +199,7 @@ function answer(ok) {
 // ---- Random tab ----
 // Every card has the same chance: pick a random index from 0 to deck.length - 1
 function pickRandom() {
-  if (deck.length === 0) {
-    rCard = null;
-    rFlipped = false;
-    return;
-  }
-  // Every card except the one just shown, unless it's the only card
-  const pool = deck.length > 1 ? deck.filter((c) => c !== rCard) : deck;
-  rCard = pool[Math.floor(Math.random() * pool.length)];
+  rCard = deck.length ? deck[Math.floor(Math.random() * deck.length)] : null;
   rFlipped = false;
 }
 

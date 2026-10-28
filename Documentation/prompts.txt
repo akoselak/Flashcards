@@ -81,10 +81,35 @@ if there is only one card"
     - pickRandom() gets modified to not pick the last card shown
 
 Prompt_4: "In my flashcard app, each card is {id, q, a, r, w}. Add a weight scale system to each card using 
-the right and wrong counts created earlier, with a default value of n and with a range of x to y. Use the 
+the right and wrong counts created earlier, with a default value of 3 and with a range of 1 to 5. Use the 
 weight scale system to make cards with higher wrong counts appear more often in the quiz. the probability of 
 each card showing up should be independent from one another."
 
     Questions to ask: 
     1. what is a good weight scale that is good for many cards and fewer cards?
+
+    What needs to change:
+    + the card will now look something like {id, q, a, r, w, p} with a p default of 3
+    + pickRandom() gets modified to account for the weight
+
+    What should happen:
+    + the never shows up twice in a row rule still applies
+    + does not affect the quiz button
+    + will not show up in "card description"
+    
+
+    I also didn’t add a stored weight field, for a reason explained below.
+    What changed:
+
+    1. weightOf(card) turns a card’s own counts into a weight from 1 to 5, using the smoothed miss rate from earlier. 
+    A card with no history gets exactly 3, which is your default, and more misses push it toward 5.
+    2. drawWeighted(cards) does one draw. It adds up all the weights, picks a random point in that total, and walks 
+    through the cards subtracting each weight until it crosses zero. A card’s chance is its weight divided by the total.
+    3. buildWeightedQueue repeats that draw once per card in the deck, building the quiz round.
+    4. startQuiz takes a new weighted flag. A fresh round and “Restart deck” use it. “Review missed” still uses a plain shuffle, 
+    since a review should show each missed card once.
+    5. The Cards tab now shows each card’s weight, so you can watch it change as you answer.
+
+    *If you ever want to check the weights while testing, you can run deck.map(weightOf) in the DevTools console without
+     putting anything back on screen.
 
