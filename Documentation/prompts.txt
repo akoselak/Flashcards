@@ -52,3 +52,39 @@ Make sure cards already saved in localStorage without these fields still work. E
     answer(ok) now grabs the current card, bumps either its right or wrong counter alongside the existing round 
     arrays, and calls saveDeck() before moving on.
     The Cards tab shows a line under each card with its right and missed counts.
+
+Prompt_3.1: "in the quiz section in my flashcard app, add a "random card" button in between the quiz and card buttons
+similar to the quiz button, but it will generate a random card equally with all cards likely to show up. make sure this card
+also contributes to the right and wrong counters."
+
+    What needs to change:
+    - A section in html for "random card"
+    - show function modified to include this button
+    - A random card generates and adds to the right and wrong counter
+
+    What changed in app.js:
+
+    1. Equal odds. pickRandom() takes Math.floor(Math.random() * deck.length), which gives every card the same chance. That also means 
+    the same card can appear twice in a row, which is what “equally likely” implies. With a four-card deck you’ll notice it.
+    2. Counters. answerRandom() increments rCard.right or rCard.wrong on the card object in deck, calls saveDeck(), and then picks the next card. It uses the same mechanism as the quiz, so the counts show up on the Cards tab and survive a reload.
+    Separate session tally. The “right · missed this session” line in the Random tab is its own tally (rRight and rWrong) and doesn’t touch 
+    the quiz’s round score.
+    3. show() was rewritten. It now loops over three tabs instead of hardcoding two, so adding a fourth later is easier. The Space bar 
+    handler was extended the same way, flipping whichever card mode is visible.
+    4. Stale cards. renderRandom() checks deck.includes(rCard), so a card you deleted can’t linger on screen.
+
+Prompt_3.2: "In the random card section, modify the sequence so that cards cannot appear twice in a row. Ensure the code doesn't break
+if there is only one card"
+
+    What needs to change:
+    - a system gets put in place to keep track of the last card shown in random card
+    - pickRandom() gets modified to not pick the last card shown
+
+Prompt_4: "In my flashcard app, each card is {id, q, a, r, w}. Add a weight scale system to each card using 
+the right and wrong counts created earlier, with a default value of n and with a range of x to y. Use the 
+weight scale system to make cards with higher wrong counts appear more often in the quiz. the probability of 
+each card showing up should be independent from one another."
+
+    Questions to ask: 
+    1. what is a good weight scale that is good for many cards and fewer cards?
+

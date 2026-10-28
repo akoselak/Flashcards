@@ -69,6 +69,12 @@ let queue = [],
   right = [],
   wrong = [];
 
+// ---- Random mode state ----
+let rCard = null,
+  rFlipped = false,
+  rRight = 0,
+  rWrong = 0;
+
 const $ = (id) => document.getElementById(id);
 const esc = (s) =>
   s.replace(
@@ -85,6 +91,7 @@ function shuffle(arr) {
   return a;
 }
 
+// ---- Quiz tab ----
 function startQuiz(cards) {
   queue = shuffle(cards);
   pos = 0;
@@ -162,11 +169,74 @@ function answer(ok) {
   renderQuiz();
 }
 
+// ---- Random tab ----
+// Every card has the same chance: pick a random index from 0 to deck.length - 1
+function pickRandom() {
+  if (deck.length === 0) {
+    rCard = null;
+    rFlipped = false;
+    return;
+  }
+  // Every card except the one just shown, unless it's the only card
+  const pool = deck.length > 1 ? deck.filter((c) => c !== rCard) : deck;
+  rCard = pool[Math.floor(Math.random() * pool.length)];
+  rFlipped = false;
+}
+
+function renderRandom() {
+  const el = $("random");
+  if (deck.length === 0) {
+    el.innerHTML =
+      '<p class="empty">Your deck is empty. Add a card on the Cards tab to start.</p>';
+    return;
+  }
+  if (!rCard || !deck.includes(rCard)) pickRandom(); // e.g. the card was deleted
+
+  el.innerHTML = `
+    <div class="meta"><span>Random card</span><span>${rRight} right · ${rWrong} missed this session</span></div>
+    <div class="card ${rFlipped ? "answer" : ""}" id="rcard" tabindex="0" role="button" aria-label="Flip card">
+      <span class="side">${rFlipped ? "Answer" : "Question"}</span>
+      ${esc(rFlipped ? rCard.a : rCard.q)}
+    </div>
+    ${
+      rFlipped
+        ? `<div class="row"><button class="btn bad" id="rmiss">Missed it</button><button class="btn good" id="rgot">Got it</button></div>`
+        : `<p class="hint">Tap the card or press Space to reveal the answer</p>`
+    }`;
+  $("rcard").onclick = flipRandom;
+  if (rFlipped) {
+    $("rgot").onclick = () => answerRandom(true);
+    $("rmiss").onclick = () => answerRandom(false);
+  }
+}
+
+function flipRandom() {
+  rFlipped = !rFlipped;
+  renderRandom();
+}
+
+function answerRandom(ok) {
+  if (ok) {
+    rCard.right++;
+    rRight++;
+  } else {
+    rCard.wrong++;
+    rWrong++;
+  }
+  saveDeck();
+  pickRandom();
+  renderRandom();
+}
+
+// ---- Space bar flips whichever card mode is showing ----
 document.addEventListener("keydown", (e) => {
-  if (e.target.matches("input,textarea") || $("quiz").hidden) return;
-  if (e.code === "Space" && pos < queue.length && queue.length) {
+  if (e.target.matches("input,textarea") || e.code !== "Space") return;
+  if (!$("quiz").hidden && queue.length && pos < queue.length) {
     e.preventDefault();
     flip();
+  } else if (!$("random").hidden && rCard) {
+    e.preventDefault();
+    flipRandom();
   }
 });
 
@@ -186,7 +256,7 @@ function renderCards() {
               .map(
                 (c) => `
         <li><div><b>${esc(c.q)}</b><span>${esc(c.a)}</span>
-        <span style="display:block;margin-top:4px">${c.right || 0} right · ${c.wrong || 0} missed</span></div>
+        <span style="display:block;margin-top:4px">${c.right} right · ${c.wrong} missed</span></div>
         <button class="del" data-id="${c.id}" aria-label="Delete card">Delete</button></li>`,
               )
               .join("")
@@ -219,15 +289,19 @@ function renderCards() {
 
 // ---- Tabs ----
 function show(which) {
-  const quiz = which === "quiz";
-  $("quiz").hidden = !quiz;
-  $("cards").hidden = quiz;
-  $("tab-quiz").setAttribute("aria-selected", quiz);
-  $("tab-cards").setAttribute("aria-selected", !quiz);
-  if (quiz) renderQuiz();
+  for (const name of ["quiz", "random", "cards"]) {
+    $(name).hidden = name !== which;
+    $("tab-" + name).setAttribute("aria-selected", name === which);
+  }
+  if (which === "quiz") renderQuiz();
+  else if (which === "random") {
+    pickRandom();
+    renderRandom();
+  } // fresh card each time you open it
   else renderCards();
 }
 $("tab-quiz").onclick = () => show("quiz");
+$("tab-random").onclick = () => show("random");
 $("tab-cards").onclick = () => show("cards");
 
 show("quiz");
