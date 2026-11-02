@@ -1,0 +1,6 @@
+Q: 'What is a function?'
+A: 'A reusable block of code.'
+Q: 'What is a loop?'
+A: 'A conditionally repeating set of code'
+Q: 'What is a condition?'
+A: 'A true or false check.'

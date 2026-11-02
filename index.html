@@ -15,7 +15,12 @@
   </head>
   <body>
     <main>
-      <h1>Flashcards</h1>
+      <div class="topbar">
+        <h1>Flashcards</h1>
+        <button class="btn ghost small" id="import-btn">Import</button>
+        <input type="file" id="import-file" accept=".json,.txt" hidden />
+      </div>
+      <p id="import-msg" class="msg" role="status" aria-live="polite"></p>
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-quiz" aria-selected="true">
           Quiz

@@ -1,0 +1,6 @@
+[
+  {"id": 1, "q": "  What's the difference between = and ===?  ", "a": "One assigns; the other compares values and types.", "right": 2, "wrong": 0},
+  {"id": 1, "q": "What does the \"Q\" in Q&A stand for?", "a": "Question.", "right": -5, "wrong": 2.7},
+  {"id": 1, "q": "Café, naïve, and résumé: why do accents matter?", "a": "Files must be saved as UTF-8.\nOtherwise they display incorrectly.", "right": "4", "wrong": "abc"},
+  {"id": 99, "q": "What happens to extra fields?", "a": "They are ignored.", "color": "blue", "starred": true}
+]

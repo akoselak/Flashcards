@@ -1,0 +1,8 @@
+Q: 'What's the difference between = and ===?'
+A: 'One assigns a value; the other compares values and types.'
+Q: 'What does the ratio 3:1 mean?'
+A: 'For every 3 of one thing there is 1 of another.'
+Q: 'Why use "Q:" at the start of a line in this format?'
+A: 'It tells the importer where a new question begins.'
+Q: 'Café, naïve, and résumé: why do accents matter?'
+A: 'Files must be saved as UTF-8 so they display correctly.'

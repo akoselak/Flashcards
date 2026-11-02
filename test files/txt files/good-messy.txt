@@ -1,0 +1,10 @@
+\xEF\xBB\xBFq: What is a variable?
+a: A named place to store a value.
+
+Q:    "What does CSS control?"
+A:   "How a page looks: colors, fonts, and spacing."   
+
+
+q: 'What is an array?'
+a: An ordered list of values.
+

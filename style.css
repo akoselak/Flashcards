@@ -251,3 +251,26 @@ textarea {
   text-align: center;
   padding: 24px 0;
 }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.btn.small {
+  flex: none;
+  padding: 8px 14px;
+}
+.msg {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+}
+.msg:empty {
+  display: none;
+}
+.msg.ok {
+  color: var(--good);
+}
+.msg.err {
+  color: var(--bad);
+}

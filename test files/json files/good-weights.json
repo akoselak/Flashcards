@@ -1,0 +1,6 @@
+[
+  {"q": "Mastered card A", "a": "You have answered this one right 20 times.", "right": 20, "wrong": 0},
+  {"q": "Mastered card B", "a": "You have answered this one right 20 times.", "right": 20, "wrong": 0},
+  {"q": "Brand new card", "a": "No history yet.", "right": 0, "wrong": 0},
+  {"q": "Struggling card", "a": "You have missed this one 20 times.", "right": 0, "wrong": 20}
+]

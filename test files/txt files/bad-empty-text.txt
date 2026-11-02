@@ -1,0 +1,4 @@
+Q: 'What is a bug?'
+A: 'An error in a program.'
+Q: 'What is debugging?'
+A: ''

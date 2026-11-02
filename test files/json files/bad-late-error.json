@@ -1,0 +1,9 @@
+[
+  {"q": "What is HTML?", "a": "The structure of a web page."},
+  {"q": "What is CSS?", "a": "The styling of a web page."},
+  {"q": "What is JavaScript?", "a": "The behavior of a web page."},
+  {"q": "What is a browser?", "a": "A program that displays web pages."},
+  {"q": "What is a server?", "a": "A computer that sends pages to browsers."},
+  {"q": "What is a URL?", "a": "The address of a web page."},
+  {"a": "Code that repeats."}
+]

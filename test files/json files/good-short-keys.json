@@ -1,0 +1,5 @@
+[
+  {"q": "What is a variable?", "a": "A named place to store a value.", "r": 2, "w": 1},
+  {"q": "What is an array?", "a": "An ordered list of values.", "r": 0, "w": 3},
+  {"q": "What is a function?", "a": "A reusable block of code."}
+]

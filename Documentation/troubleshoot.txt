@@ -10,3 +10,6 @@ Issue_1: Newly created cards do not update
 
 Resolution_0: updated deck.push() when initializing a new card so that right and wrong = 0
 deck.push({ id: nextId++, q, a, right: 0, wrong: 0 });
+
+Issue_2: 'Check good-tricky.txt on the Cards tab. Make sure the apostrophe in “What’s” survived and the accents display correctly. 
+If they look garbled, the file was read with the wrong encoding.' failed test

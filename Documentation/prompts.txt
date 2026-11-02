@@ -111,5 +111,41 @@ each card showing up should be independent from one another."
     5. The Cards tab now shows each card’s weight, so you can watch it change as you answer.
 
     *If you ever want to check the weights while testing, you can run deck.map(weightOf) in the DevTools console without
-     putting anything back on screen.
+    putting anything back on screen.
 
+Prompt_5: "In my flashcard app, an import feature in the top right corner of the page that accepts two formats of cards: 
+a standard .json file, and a .txt file with a specific format. the .txt file has alternating lines between 'Q' and 'A'
+and will look something like this:
+
+Q: 'sample question'
+A: 'sample answer'
+Q: 'sample question'
+A: 'sample answer'
+
+i want my app to handle the conversion between this .txt file to the proper .json format, {id, q, a, r, w}. r and w will default to
+0. I also want exception handling for if the .txt file is in the wrong format to stop the import all together. I also want my import to
+replace the existing card set, for now."
+
+    What needs to change:
+    + a working import button on the top right of the page
+    + logic in my app file that accepts both a txt and json
+
+    What should happen:
+    + the import replaces the current card deck
+    + the program successfully converts formatted .txt files into json 
+
+    What changed:
+    Field names. Your prompt said {id, q, a, r, w}, but the app stores right and wrong, so I kept those. The JSON import 
+    also accepts r and w in a file, in case you write them by hand.
+
+    Surrounding quotes are stripped. Your sample showed Q: 'sample question', and I read the quotes as part of the format, so 'text' 
+    or "text" becomes text. The catch is that an answer that genuinely starts and ends with quotes loses them. If the quotes in your 
+    sample were just decoration, remove the stripQuotes call and use m[2].trim() instead.
+
+    Blank lines are ignored, so you can space out your cards for readability. Everything else that’s off-format stops the import.
+
+    I added a confirmation prompt, since replacing the deck is destructive. To remove it, delete the if (!confirm(...)) { ... } block.
+
+    Empty files are refused, including [], so a mistake can’t wipe your deck.
+    
+    Counts are cleaned up. Negative or non-numeric counts in a JSON file become 0, because a negative count would break the weight math.

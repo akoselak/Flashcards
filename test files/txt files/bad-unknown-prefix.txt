@@ -1,0 +1,4 @@
+Q: 'What is Git?'
+A: 'A version control system.'
+Question: 'What is GitHub?'
+Answer: 'A website that hosts Git repositories.'

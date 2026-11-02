@@ -308,7 +308,10 @@ function renderCards() {
 }
 
 // ---- Tabs ----
+let currentTab = "quiz";
+
 function show(which) {
+  currentTab = which;
   for (const name of ["quiz", "random", "cards"]) {
     $(name).hidden = name !== which;
     $("tab-" + name).setAttribute("aria-selected", name === which);
@@ -323,5 +326,152 @@ function show(which) {
 $("tab-quiz").onclick = () => show("quiz");
 $("tab-random").onclick = () => show("random");
 $("tab-cards").onclick = () => show("cards");
+
+// ---- Import (.json or .txt) ----
+// Every parser throws an Error on the first problem, so a bad file never reaches the deck.
+
+// Removes one matching pair of surrounding quotes: 'text' or "text"
+function stripQuotes(s) {
+  const t = s.trim();
+  const first = t[0],
+    last = t[t.length - 1];
+  if (t.length >= 2 && (first === "'" || first === '"') && first === last) {
+    return t.slice(1, -1).trim();
+  }
+  return t;
+}
+
+// Expects alternating lines:  Q: 'question'  then  A: 'answer'
+function parseTxt(text) {
+  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/); // drop BOM, handle Windows line endings
+  const cards = [];
+  let pendingQ = null,
+    pendingLine = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line === "") continue; // blank lines are ignored
+    const n = i + 1;
+
+    const m = line.match(/^([QA])\s*:\s*(.*)$/i);
+    if (!m) throw new Error(`Line ${n} should start with “Q:” or “A:”.`);
+
+    const kind = m[1].toUpperCase();
+    const expected = pendingQ === null ? "Q" : "A";
+    if (kind !== expected)
+      throw new Error(
+        `Line ${n} should start with “${expected}:” but starts with “${kind}:”.`,
+      );
+
+    const body = stripQuotes(m[2]);
+    if (body === "") throw new Error(`Line ${n} has no text after “${kind}:”.`);
+
+    if (kind === "Q") {
+      pendingQ = body;
+      pendingLine = n;
+    } else {
+      cards.push({ q: pendingQ, a: body, right: 0, wrong: 0 });
+      pendingQ = null;
+    }
+  }
+
+  if (pendingQ !== null)
+    throw new Error(
+      `The question on line ${pendingLine} has no “A:” line after it.`,
+    );
+  if (cards.length === 0) throw new Error("No cards were found in the file.");
+  return cards;
+}
+
+// A count must be a whole number of 0 or more (negatives would break the weights)
+const toCount = (v) => Math.max(0, Math.floor(Number(v) || 0));
+
+// Expects an array of objects with text in "q" and "a"; counts are optional
+function parseJson(text) {
+  let data;
+  try {
+    data = JSON.parse(text.replace(/^\uFEFF/, ""));
+  } catch {
+    throw new Error("The file is not valid JSON.");
+  }
+
+  if (!Array.isArray(data))
+    throw new Error("The JSON must be an array of cards.");
+  if (data.length === 0) throw new Error("No cards were found in the file.");
+
+  return data.map((c, i) => {
+    const ok =
+      c &&
+      typeof c === "object" &&
+      typeof c.q === "string" &&
+      c.q.trim() !== "" &&
+      typeof c.a === "string" &&
+      c.a.trim() !== "";
+    if (!ok) throw new Error(`Card ${i + 1} needs non-empty “q” and “a” text.`);
+    return {
+      q: c.q.trim(),
+      a: c.a.trim(),
+      right: toCount(c.right ?? c.r), // accepts right/wrong or r/w
+      wrong: toCount(c.wrong ?? c.w),
+    };
+  });
+}
+
+// Picks the parser by file extension, then gives every card a fresh id (the file's ids are ignored)
+function buildDeckFromFile(name, text) {
+  const ext = name.split(".").pop().toLowerCase();
+  let cards;
+  if (ext === "json") cards = parseJson(text);
+  else if (ext === "txt") cards = parseTxt(text);
+  else throw new Error("Please choose a .json or .txt file.");
+  return cards.map((c, i) => ({
+    id: i + 1,
+    q: c.q,
+    a: c.a,
+    right: c.right,
+    wrong: c.wrong,
+  }));
+}
+
+function setImportMessage(text, ok) {
+  const el = $("import-msg");
+  el.textContent = text;
+  el.className = "msg " + (ok ? "ok" : "err");
+}
+
+$("import-btn").onclick = () => $("import-file").click();
+
+$("import-file").onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const newDeck = buildDeckFromFile(file.name, text); // throws before the deck is touched
+
+    if (
+      !confirm(
+        `Replace your ${deck.length} current card(s) with ${newDeck.length} imported card(s)? This can’t be undone.`,
+      )
+    ) {
+      setImportMessage("", true);
+      return;
+    }
+
+    deck = newDeck;
+    nextId = deck.length + 1;
+    saveDeck();
+    queue = []; // rebuild the quiz from the new deck
+    rCard = null; // forget the old random card
+    show(currentTab); // redraw whichever tab is open
+    setImportMessage(`Imported ${deck.length} card(s).`, true);
+  } catch (err) {
+    setImportMessage(
+      `Import failed: ${err.message} Your deck was not changed.`,
+      false,
+    );
+  } finally {
+    e.target.value = ""; // lets you pick the same file again
+  }
+};
 
 show("quiz");
