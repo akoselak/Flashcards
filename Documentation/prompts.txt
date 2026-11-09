@@ -149,3 +149,29 @@ replace the existing card set, for now."
     Empty files are refused, including [], so a mistake can’t wipe your deck.
     
     Counts are cleaned up. Negative or non-numeric counts in a JSON file become 0, because a negative count would break the weight math.
+
+Prompt_6: "an export button next to my import button that can export flashcards as both a .json and a formatted .txt. I want to reset the 
+tracking for how many times i get that card right and wrong."
+
+    Questions to ask:
+    1. what is the best format for exporting the cards? should they be stored in a .json format on my computer?
+
+    What needs to change:
+    - html added for the button, along with its logic in app.js
+    - a function that simply takes all the json strips and put them in a file
+    - same with my specially formatted .txt
+
+    What should happen:
+    - a button that successfully exports my files to their correct format
+
+    What changed:
+    - One button, two formats. Export opens a small menu with .json and .txt. It closes when you click elsewhere or press Escape.
+    - Your tracking reset. I read this as “the exported file should have counts at 0,” so exported JSON has right: 0, wrong: 0 on every card, 
+    and IDs are renumbered 1, 2, 3.... Your deck inside the app is left alone. If you meant resetting the counts in the app itself, 
+    that’s a separate “Reset tracking” button, and I can add it.
+    - The .txt format is your Q/A layout, with each text wrapped in single quotes like your sample, and a blank line between cards. 
+    It has no counts. The wrapping is deliberate: the importer removes one pair of quotes, so a card whose text really starts and ends with 
+    quotes survives a round trip.
+    - A warning when .txt can’t be lossless. If a card’s second or later line starts with Q: or A:, a re-import would read it as a new block. 
+    The export still happens, but the message tells you, and .json is always lossless.
+    - An empty deck shows “Nothing to export” instead of downloading an empty file.

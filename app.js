@@ -162,7 +162,7 @@ function renderQuiz() {
     <div class="bar"><div style="width:${(pos / queue.length) * 100}%"></div></div>
     <div class="card ${flipped ? "answer" : ""}" id="card" tabindex="0" role="button" aria-label="Flip card">
       <span class="side">${flipped ? "Answer" : "Question"}</span>
-      ${esc(flipped ? c.a : c.q)}
+      <span class="text">${esc(flipped ? c.a : c.q)}</span>
     </div>
     ${
       flipped
@@ -216,7 +216,7 @@ function renderRandom() {
     <div class="meta"><span>Random card</span><span>${rRight} right · ${rWrong} missed this session</span></div>
     <div class="card ${rFlipped ? "answer" : ""}" id="rcard" tabindex="0" role="button" aria-label="Flip card">
       <span class="side">${rFlipped ? "Answer" : "Question"}</span>
-      ${esc(rFlipped ? rCard.a : rCard.q)}
+      <span class="text">${esc(rFlipped ? rCard.a : rCard.q)}</span>
     </div>
     ${
       rFlipped
@@ -341,43 +341,56 @@ function stripQuotes(s) {
   return t;
 }
 
-// Expects alternating lines:  Q: 'question'  then  A: 'answer'
+// Block format: a line starting with "Q:" begins a question and a line starting with "A:" begins its answer.
+// Every line after that, up to the next "Q:" or "A:" line, belongs to the same block.
 function parseTxt(text) {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/); // drop BOM, handle Windows line endings
   const cards = [];
+  let block = null; // the Q or A block being collected: { kind, line, lines }
   let pendingQ = null,
     pendingLine = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line === "") continue; // blank lines are ignored
-    const n = i + 1;
-
-    const m = line.match(/^([QA])\s*:\s*(.*)$/i);
-    if (!m) throw new Error(`Line ${n} should start with “Q:” or “A:”.`);
-
-    const kind = m[1].toUpperCase();
-    const expected = pendingQ === null ? "Q" : "A";
-    if (kind !== expected)
-      throw new Error(
-        `Line ${n} should start with “${expected}:” but starts with “${kind}:”.`,
-      );
-
-    const body = stripQuotes(m[2]);
-    if (body === "") throw new Error(`Line ${n} has no text after “${kind}:”.`);
-
-    if (kind === "Q") {
+  // Closes the current block: joins its lines into one text and files it as a question or an answer
+  function finishBlock() {
+    if (!block) return;
+    const body = stripQuotes(block.lines.join("\n").trim()); // trims blank lines at both ends only
+    if (body === "")
+      throw new Error(`Line ${block.line} has no text after “${block.kind}:”.`);
+    if (block.kind === "Q") {
       pendingQ = body;
-      pendingLine = n;
+      pendingLine = block.line;
     } else {
       cards.push({ q: pendingQ, a: body, right: 0, wrong: 0 });
       pendingQ = null;
     }
+    block = null;
   }
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i].replace(/\s+$/, ""); // trailing spaces never matter
+    const m = raw.match(/^\s*([QA])\s*:\s*(.*)$/i);
+
+    if (m) {
+      // a new block starts here
+      finishBlock();
+      const kind = m[1].toUpperCase();
+      const expected = pendingQ === null ? "Q" : "A";
+      if (kind !== expected)
+        throw new Error(
+          `Line ${i + 1} should start with “${expected}:” but starts with “${kind}:”.`,
+        );
+      block = { kind, line: i + 1, lines: [m[2]] };
+    } else if (block) {
+      block.lines.push(raw); // continuation: keeps indentation and blank lines
+    } else if (raw.trim() !== "") {
+      throw new Error(`Line ${i + 1} appears before the first “Q:” line.`);
+    }
+  }
+  finishBlock();
 
   if (pendingQ !== null)
     throw new Error(
-      `The question on line ${pendingLine} has no “A:” line after it.`,
+      `The question on line ${pendingLine} has no “A:” block after it.`,
     );
   if (cards.length === 0) throw new Error("No cards were found in the file.");
   return cards;
@@ -433,6 +446,23 @@ function buildDeckFromFile(name, text) {
   }));
 }
 
+// ---- Export helpers ----
+// Writes cards in the same Q:/A: block format the importer reads. Text is wrapped in single quotes
+// (the importer removes one pair), so text that itself starts and ends with quotes survives a round trip.
+function toTxt(cards) {
+  return cards.map((c) => `Q: '${c.q}'\nA: '${c.a}'`).join("\n\n") + "\n";
+}
+
+// In a .txt file, a second or later line starting with "Q:" or "A:" would be read as a new block
+function hasAmbiguousLine(c) {
+  return [c.q, c.a].some((t) =>
+    t
+      .split("\n")
+      .slice(1)
+      .some((l) => /^\s*[QA]\s*:/i.test(l)),
+  );
+}
+
 function setImportMessage(text, ok) {
   const el = $("import-msg");
   el.textContent = text;
@@ -473,5 +503,78 @@ $("import-file").onchange = async (e) => {
     e.target.value = ""; // lets you pick the same file again
   }
 };
+
+// ---- Export (.json or .txt) ----
+function downloadFile(filename, text, mime) {
+  const url = URL.createObjectURL(
+    new Blob([text], { type: mime + ";charset=utf-8" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // give the browser time to start the download
+}
+
+function exportDeck(kind) {
+  if (deck.length === 0) {
+    setImportMessage("Nothing to export: your deck is empty.", false);
+    return;
+  }
+
+  // Exported copies get fresh ids and counts reset to 0. The deck in the app is not touched.
+  const cards = deck.map((c, i) => ({
+    id: i + 1,
+    q: c.q,
+    a: c.a,
+    right: 0,
+    wrong: 0,
+  }));
+
+  if (kind === "json") {
+    downloadFile(
+      "flashcards.json",
+      JSON.stringify(cards, null, 2) + "\n",
+      "application/json",
+    );
+    setImportMessage(
+      `Exported ${cards.length} card(s) to flashcards.json with counts reset to 0. Your deck here is unchanged.`,
+      true,
+    );
+  } else {
+    downloadFile("flashcards.txt", toTxt(cards), "text/plain");
+    const risky = cards.filter(hasAmbiguousLine).length;
+    if (risky === 0) {
+      setImportMessage(
+        `Exported ${cards.length} card(s) to flashcards.txt. The .txt format has no counts.`,
+        true,
+      );
+    } else {
+      setImportMessage(
+        `Exported ${cards.length} card(s) to flashcards.txt, but ${risky} card(s) have a line starting with “Q:” or “A:” that a .txt import would misread. Use .json for a lossless copy.`,
+        false,
+      );
+    }
+  }
+}
+
+const exportBtn = $("export-btn"),
+  exportMenu = $("export-menu");
+function toggleExportMenu(open) {
+  exportMenu.hidden = !open;
+  exportBtn.setAttribute("aria-expanded", String(open));
+}
+exportBtn.onclick = (e) => {
+  e.stopPropagation();
+  toggleExportMenu(exportMenu.hidden);
+};
+document.addEventListener("click", () => toggleExportMenu(false));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") toggleExportMenu(false);
+});
+$("export-json").onclick = () => exportDeck("json");
+$("export-txt").onclick = () => exportDeck("txt");
 
 show("quiz");

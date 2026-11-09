@@ -274,3 +274,44 @@ textarea {
 .msg.err {
   color: var(--bad);
 }
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.menu {
+  position: relative;
+}
+.menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+}
+.menu-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.menu-list button:hover {
+  background: var(--bg);
+}
+.text {
+  white-space: pre-wrap;
+}
+.list b,
+.list span {
+  white-space: pre-wrap;
+}

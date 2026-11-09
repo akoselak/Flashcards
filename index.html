@@ -17,10 +17,28 @@
     <main>
       <div class="topbar">
         <h1>Flashcards</h1>
-        <button class="btn ghost small" id="import-btn">Import</button>
-        <input type="file" id="import-file" accept=".json,.txt" hidden />
+        <div class="actions">
+          <button class="btn ghost small" id="import-btn">Import</button>
+          <div class="menu">
+            <button
+              class="btn ghost small"
+              id="export-btn"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              Export ▾
+            </button>
+            <div class="menu-list" id="export-menu" hidden>
+              <button id="export-json">JSON (.json)</button>
+              <button id="export-txt">Text (.txt)</button>
+            </div>
+          </div>
+          <input type="file" id="import-file" accept=".json,.txt" hidden />
+        </div>
       </div>
+
       <p id="import-msg" class="msg" role="status" aria-live="polite"></p>
+
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="tab-quiz" aria-selected="true">
           Quiz
@@ -32,6 +50,7 @@
           Cards
         </button>
       </div>
+
       <section id="quiz"></section>
       <section id="random" hidden></section>
       <section id="cards" hidden></section>
