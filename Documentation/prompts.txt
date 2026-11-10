@@ -175,3 +175,16 @@ tracking for how many times i get that card right and wrong."
     - A warning when .txt can’t be lossless. If a card’s second or later line starts with Q: or A:, a re-import would read it as a new block. 
     The export still happens, but the message tells you, and .json is always lossless.
     - An empty deck shows “Nothing to export” instead of downloading an empty file.
+
+Prompt_6b: "in the cards section in my flashcards app, a naming feature that will bind to the file when exported"
+
+    what changed:
+    - A “Deck name” field sits at the top of the Cards tab, with a live preview under it, like “Exports as Spanish verbs.json or Spanish verbs.txt”.
+    It updates as you type.
+    - The name is saved in localStorage as you type, so it survives a reload. It’s stored under its own key, separate from your cards.
+    - Export uses it as the filename, so a deck named “Spanish verbs” downloads as Spanish verbs.json or Spanish verbs.txt. The success message 
+    shows the same name.
+    - Awkward names are cleaned up before becoming a filename. Characters filenames can’t contain (/ \ : * ? " < > |) are removed, extra spaces 
+    collapse, leading and trailing dots are dropped, and the name is capped at 60 characters. An empty or all-illegal name falls back to 
+    flashcards, and names Windows reserves (like CON) get an underscore prefix. I tested these cases against the real function, and for example 
+    My: Deck? becomes My Deck.

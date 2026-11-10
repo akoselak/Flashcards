@@ -57,8 +57,28 @@ function saveDeck() {
   }
 }
 
+// The deck's name is stored separately from the cards, so the card format never changes
+const NAME_KEY = "flashcards.name";
+
+function loadName() {
+  try {
+    return localStorage.getItem(NAME_KEY) || "";
+  } catch (err) {
+    return "";
+  }
+}
+
+function saveName() {
+  try {
+    localStorage.setItem(NAME_KEY, deckName);
+  } catch (err) {
+    console.warn("Could not save deck name:", err);
+  }
+}
+
 // ---- Data ----
 let deck = loadDeck();
+let deckName = loadName();
 // Next id must be higher than any saved id, or new cards could collide with old ones
 let nextId = deck.reduce((max, c) => Math.max(max, c.id), 0) + 1;
 
@@ -118,8 +138,8 @@ function buildWeightedQueue(cards, n) {
 }
 
 // ---- Quiz tab ----
-function startQuiz(cards, weighted = false) {
-  queue = weighted ? buildWeightedQueue(cards, cards.length) : shuffle(cards);
+function startQuiz(cards) {
+  queue = shuffle(cards);
   pos = 0;
   flipped = false;
   right = [];
@@ -135,7 +155,7 @@ function renderQuiz() {
     return;
   }
   if (queue.length === 0) {
-    startQuiz(deck, true);
+    startQuiz(deck);
     return;
   }
 
@@ -150,7 +170,7 @@ function renderQuiz() {
           <button class="btn" id="redo" ${wrong.length ? "" : "disabled"}>Review ${wrong.length} missed</button>
         </div>
       </div>`;
-    $("again").onclick = () => startQuiz(deck, true);
+    $("again").onclick = () => startQuiz(deck);
     // A card can be drawn and missed twice in one round, so review each missed card once
     $("redo").onclick = () => startQuiz([...new Set(wrong)]);
     return;
@@ -198,8 +218,11 @@ function answer(ok) {
 
 // ---- Random tab ----
 // Every card has the same chance: pick a random index from 0 to deck.length - 1
-function pickRandom() {
-  rCard = deck.length ? deck[Math.floor(Math.random() * deck.length)] : null;
+function pickRandom(){
+  if (deck.length === 0) { rCard = null; rFlipped = false; return; }
+  // Every card except the one just shown, unless it's the only card
+  const pool = deck.length > 1 ? deck.filter(c => c !== rCard) : deck;
+  rCard = pool[Math.floor(Math.random() * pool.length)];
   rFlipped = false;
 }
 
@@ -263,6 +286,9 @@ document.addEventListener("keydown", (e) => {
 // ---- Cards tab ----
 function renderCards() {
   $("cards").innerHTML = `
+    <label for="deckname">Deck name</label>
+    <input id="deckname" type="text" maxlength="60" placeholder="flashcards" value="${esc(deckName)}">
+    <p class="hint" id="filehint"></p>
     <label for="nq">Question</label>
     <textarea id="nq" placeholder="What is a variable?"></textarea>
     <label for="na">Answer</label>
@@ -283,6 +309,18 @@ function renderCards() {
           : '<li class="empty" style="display:block;border:none;background:none">No cards yet.</li>'
       }
     </ul>`;
+  // Typing updates the saved name and the filename preview without redrawing the tab (keeps focus)
+  const updateHint = () => {
+    $("filehint").textContent =
+      `Exports as ${fileBase()}.json or ${fileBase()}.txt`;
+  };
+  $("deckname").oninput = (e) => {
+    deckName = e.target.value;
+    saveName();
+    updateHint();
+  };
+  updateHint();
+
   $("add").onclick = () => {
     const q = $("nq").value.trim(),
       a = $("na").value.trim();
@@ -488,6 +526,8 @@ $("import-file").onchange = async (e) => {
     }
 
     deck = newDeck;
+    deckName = file.name.replace(/\.[^.]+$/, ""); // the file's name (without extension) becomes the deck name
+    saveName();
     nextId = deck.length + 1;
     saveDeck();
     queue = []; // rebuild the quiz from the new deck
@@ -518,6 +558,21 @@ function downloadFile(filename, text, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 1000); // give the browser time to start the download
 }
 
+// Turns the deck name into a safe filename (no extension). Falls back to "flashcards".
+function fileBase() {
+  const cleaned = deckName
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "") // characters filenames can't contain
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\.+|\.+$/g, "") // no leading or trailing dots
+    .slice(0, 60)
+    .trim();
+  if (cleaned === "") return "flashcards";
+  return /^(con|prn|aux|nul|com\d|lpt\d)$/i.test(cleaned)
+    ? "_" + cleaned
+    : cleaned; // names Windows reserves
+}
+
 function exportDeck(kind) {
   if (deck.length === 0) {
     setImportMessage("Nothing to export: your deck is empty.", false);
@@ -532,28 +587,29 @@ function exportDeck(kind) {
     right: 0,
     wrong: 0,
   }));
+  const base = fileBase();
 
   if (kind === "json") {
     downloadFile(
-      "flashcards.json",
+      `${base}.json`,
       JSON.stringify(cards, null, 2) + "\n",
       "application/json",
     );
     setImportMessage(
-      `Exported ${cards.length} card(s) to flashcards.json with counts reset to 0. Your deck here is unchanged.`,
+      `Exported ${cards.length} card(s) to ${base}.json with counts reset to 0. Your deck here is unchanged.`,
       true,
     );
   } else {
-    downloadFile("flashcards.txt", toTxt(cards), "text/plain");
+    downloadFile(`${base}.txt`, toTxt(cards), "text/plain");
     const risky = cards.filter(hasAmbiguousLine).length;
     if (risky === 0) {
       setImportMessage(
-        `Exported ${cards.length} card(s) to flashcards.txt. The .txt format has no counts.`,
+        `Exported ${cards.length} card(s) to ${base}.txt. The .txt format has no counts.`,
         true,
       );
     } else {
       setImportMessage(
-        `Exported ${cards.length} card(s) to flashcards.txt, but ${risky} card(s) have a line starting with “Q:” or “A:” that a .txt import would misread. Use .json for a lossless copy.`,
+        `Exported ${cards.length} card(s) to ${base}.txt, but ${risky} card(s) have a line starting with “Q:” or “A:” that a .txt import would misread. Use .json for a lossless copy.`,
         false,
       );
     }

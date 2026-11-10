@@ -8,8 +8,13 @@ Issue_1: Newly created cards do not update
 
     + the newly added card is setting right and wrong as null instead of 0
 
-Resolution_0: updated deck.push() when initializing a new card so that right and wrong = 0
+Resolution_1: updated deck.push() when initializing a new card so that right and wrong = 0
 deck.push({ id: nextId++, q, a, right: 0, wrong: 0 });
 
 Issue_2: 'Check good-tricky.txt on the Cards tab. Make sure the apostrophe in “What’s” survived and the accents display correctly. 
 If they look garbled, the file was read with the wrong encoding.' failed test
+
+Issue_3: Quiz section repeats some cards and misses others. Random card is returning the same cards back-to-back (noticed after export naming)
+*look at pickRandom()
+
+Resolution_3: Just needed to modify the quiz and pickRandom funtions again
